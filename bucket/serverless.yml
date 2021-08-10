@@ -7,8 +7,8 @@ provider:
   name: aws
   runtime: nodejs12.x
   stage: ${env:STAGE, 'dev'}
-  profile: ${env:PROFILE, 'default'}
-  region: us-east-1
+  profile: ${env:SLS_PROFILE}
+  region: ${env:REGION}
   environment:
     BUCKET: ${env:BUCKET}
 

@@ -9,7 +9,7 @@ sls config credentials \
   --provider aws \
   --key ${SLS_KEY} \
   --secret ${SLS_SECRET} \
-  --profile serverless-admin
+  --profile ${SLS_PROFILE}
 
 # cd into functions dir
 cd /deploy/functions
