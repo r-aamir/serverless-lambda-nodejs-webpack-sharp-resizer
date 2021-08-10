@@ -1,4 +1,4 @@
-service: image-resize-on-the-fly-functions
+service: gi-functions
 
 plugins:
   - serverless-plugin-tracing
@@ -11,17 +11,17 @@ provider:
   tracing: true
   region: ${env:REGION}
   environment:
-    BUCKET: ${env:BUCKET}
+    BUCKET: ${env:S3_BUCKET}
     REGION: ${env:REGION}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"
-      Resource: "arn:aws:s3:::${env:BUCKET}"
+      Resource: "arn:aws:s3:::${env:S3_BUCKET}"
     - Effect: "Allow"
       Action:
         - "s3:PutObject"
-      Resource: "arn:aws:s3:::${env:BUCKET}"
+      Resource: "arn:aws:s3:::${env:S3_BUCKET}"
     - Effect: "Allow"
       Action:
         - "xray:PutTraceSegments"

@@ -1,42 +1,42 @@
-service: image-resize-on-the-fly-bucket
+service: gi-bucket
 
 custom:
-  secrets: ${file(../secrets/secrets.json)}
+  secrets: ${file(../secrets/secrets.json)} # will be created in our deploy.sh script
 
 provider:
   name: aws
   runtime: nodejs12.x
-  stage: ${env:STAGE, 'dev'}
+  stage: ${env:STAGE}
   profile: ${env:SLS_PROFILE}
   region: ${env:REGION}
   environment:
-    BUCKET: ${env:BUCKET}
+    S3_BUCKET: ${env:S3_BUCKET}
 
 resources:
   Resources:
-    ImageResizeOnTheFly:
-      Type: AWS::S3::Bucket
+    GI:
+      Type: AWS::S3::Bucket # creating an S3 Bucket
       Properties:
         AccessControl: PublicReadWrite
-        BucketName: ${env:BUCKET}
-        WebsiteConfiguration:
+        BucketName: ${env:S3_BUCKET}
+        WebsiteConfiguration: # enabling the static website option
           ErrorDocument: error.html
           IndexDocument: index.html
-          RoutingRules:
+          RoutingRules: # telling it to redirect for every 404 error
             - 
               RedirectRule:
-                HostName: ${self:custom.secrets.DOMAIN}
-                HttpRedirectCode: "307"
+                HostName: ${self:custom.secrets.DOMAIN} # API Gateway domain
+                HttpRedirectCode: "307" # temporary redirect HTTP code
                 Protocol: "https"
-                ReplaceKeyPrefixWith: "${self:provider.stage}/resize?key="
+                ReplaceKeyPrefixWith: "${self:provider.stage}/image?key=" # route
               RoutingRuleCondition:
                 HttpErrorCodeReturnedEquals: "404"
                 KeyPrefixEquals: ""
-    ImageResizeOnTheFlyPolicy:
-      Type: AWS::S3::BucketPolicy
+    GIPolicy:
+      Type: AWS::S3::BucketPolicy # add policy for public read access
       Properties: 
         Bucket: 
-          Ref: ImageResizeOnTheFly
+          Ref: GI
         PolicyDocument: 
           Statement: 
             - 
@@ -49,6 +49,6 @@ resources:
                   - 
                     - "arn:aws:s3:::"
                     - 
-                      Ref: ImageResizeOnTheFly
+                      Ref: GI
                     - "/*"
               Principal: "*"

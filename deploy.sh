@@ -1,7 +1,7 @@
 # variables
 stage=${STAGE}
 region=${REGION}
-bucket=${BUCKET}
+bucket=${S3_BUCKET}
 secrets='/deploy/secrets/secrets.json'
 
 # Configure your Serverless installation to talk to your AWS account

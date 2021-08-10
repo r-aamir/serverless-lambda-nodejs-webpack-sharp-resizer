@@ -2,8 +2,8 @@ const stream = require('stream');
 const awS3 = require('aws-sdk/clients/s3');
 const s3 = new awS3({signatureVersion: 'v4'});
 const sharp = require('sharp');
-const SRC_BUCKET = process.env.SRC_BUCKET;
-const DST_BUCKET = process.env.DST_BUCKET;
+const SRC_BUCKET = 'cdn.esmart.by';
+const DST_BUCKET = process.env.S3_BUCKET;
 const dstUrl = `http://${process.env.DST_BUCKET}.s3-website.${process.env.REGION}.amazonaws.com/`;
 
 // create the write stream abstraction for uploading data to S3
