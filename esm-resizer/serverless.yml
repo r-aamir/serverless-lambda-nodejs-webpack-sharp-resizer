@@ -1,4 +1,4 @@
-service: shion-resizer
+service: esm-resizer
 plugins:
   - serverless-dotenv-plugin
   - serverless-webpack
@@ -13,7 +13,7 @@ provider:
   name: aws
   runtime: nodejs10.x
   stage: ${env:STAGE, 'dev'}
-  region: us-east-1
+  region: ${env:REGION}
   environment:
     BUCKET: ${env:BUCKET}
     DOMAIN: ${env:DOMAIN}
