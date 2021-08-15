@@ -1,10 +1,11 @@
 {
-  "name": "image-resize",
+  "name": "gi",
   "version": "1.0.0",
-  "description": "Serverless image resizing",
-  "main": "resize.js",
+  "description": "Get Image Resized.",
+  "main": "handler.js",
   "dependencies": {
     "serverless-plugin-tracing": "^2.0.0",
-    "sharp": "^0.26.3"
+    "sharp": "^0.22.1"
   }
 }
+

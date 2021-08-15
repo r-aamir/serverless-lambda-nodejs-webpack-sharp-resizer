@@ -1,27 +1,27 @@
-service: gi-functions
+service: image-resize-on-the-fly-functions
 
 plugins:
   - serverless-plugin-tracing
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs10.x
   stage: ${env:STAGE, 'dev'}
   profile: ${env:SLS_PROFILE}
   tracing: true
   region: ${env:REGION}
   environment:
-    BUCKET: ${env:S3_BUCKET}
+    BUCKET: ${env:BUCKET}
     REGION: ${env:REGION}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"
-      Resource: "arn:aws:s3:::${env:S3_BUCKET}"
+      Resource: "arn:aws:s3:::${env:BUCKET}"
     - Effect: "Allow"
       Action:
         - "s3:PutObject"
-      Resource: "arn:aws:s3:::${env:S3_BUCKET}"
+      Resource: "arn:aws:s3:::${env:BUCKET}"
     - Effect: "Allow"
       Action:
         - "xray:PutTraceSegments"
