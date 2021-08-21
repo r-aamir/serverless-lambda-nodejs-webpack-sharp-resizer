@@ -1,5 +1,3 @@
-#https://gi.esmart.by.s3-website.ap-south-1.amazonaws.com/p/420x360/dvlca-0945-ofjks.jpg
-
 service: esm-resizer
 plugins:
   - serverless-webpack
@@ -15,10 +13,8 @@ custom:
 provider:
   name: aws
   runtime: nodejs12.x
-  stage: ${env:STAGE, 'dev'}
+  stage: ${env:STAGE}
   region: ${env:REGION}
-  environment:
-    DOMAIN: ${env:DOMAIN}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -53,13 +49,13 @@ resources:
       Type: AWS::S3::Bucket # creating an S3 Bucket
       Properties:
         AccessControl: PublicReadWrite
-        BucketName: ${env:BUCKET}
+        BucketName: gi.esmart.by
         WebsiteConfiguration: # enabling the static website option
           ErrorDocument: error.html
           IndexDocument: index.html
           RoutingRules: # telling it to redirect for every 404 error
             - RedirectRule:
-                HostName: ${env:DOMAIN} # API Gateway domain
+                HostName: inos4gzra3.execute-api.${env:REGION}.amazonaws.com
                 HttpRedirectCode: "307" # temporary redirect HTTP code
                 Protocol: "https"
                 ReplaceKeyPrefixWith: "${self:provider.stage}/resize?key=" # route
