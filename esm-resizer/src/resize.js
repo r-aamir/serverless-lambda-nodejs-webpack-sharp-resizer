@@ -47,18 +47,14 @@ const streamToSharp = ({ w, h, config }) => {
 
 // sharp resize stream
 const parseColor = (c) => {
-  if (c.indexOf('-') > -1 || c.indexOf(',') > -1) {
+  if (c.indexOf(',') > -1 || c.indexOf('-') > -1) {
     c = c.replaceAll('-', ',');
     switch (c.split(',').length) {
-    case 3:
-      return `rgb(${c})`;
-      break;
-    case 4:
+    case 3: case 4:
       return `rgba(${c})`;
-      break;
-    default:
-      return false;
     }
+
+    return false;
   }
   
   switch (c.length) {
