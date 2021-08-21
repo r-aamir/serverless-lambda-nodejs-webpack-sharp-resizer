@@ -45,27 +45,7 @@ const streamToSharp = ({ w, h, config }) => {
     .toFormat('png') // .jpeg()
 }
 
-// sharp resize stream
-const parseColor = (c) => {
-  if (c.indexOf(',') > -1 || c.indexOf('-') > -1) {
-    c = c.replaceAll('-', ',');
-    switch (c.split(',').length) {
-    case 3: case 4:
-      return `rgba(${c})`;
-    }
-
-    return false;
-  }
-  
-  switch (c.length) {
-  case 3: case 6:
-    return '#' + c;
-  default:
-    return false;
-  }
-}
-
-const modeParser = (mode, config) => {
+const setSharpConfig = (mode, config) => {
   if (!mode) return;
 
   switch (mode) {
@@ -88,10 +68,29 @@ const modeParser = (mode, config) => {
   }
 }
 
+const parseColor = (c) => {
+  if (c.indexOf(',') > -1 || c.indexOf('-') > -1) {
+    c = c.replaceAll('-', ',');
+    switch (c.split(',').length) {
+    case 3: case 4:
+      return `rgba(${c})`;
+    }
+
+    return false;
+  }
+
+  switch (c.length) {
+  case 3: case 6:
+    return '#' + c;
+  default:
+    return false;
+  }
+}
+
 export {
   isObjectExists,
   readStreamFromS3,
   writeStreamToS3,
   streamToSharp,
-  modeParser
+  setSharpConfig
 };

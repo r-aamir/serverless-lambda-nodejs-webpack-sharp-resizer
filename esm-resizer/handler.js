@@ -1,4 +1,4 @@
-import { isObjectExists, readStreamFromS3, writeStreamToS3, streamToSharp, modeParser } from './src/resize';
+import { isObjectExists, readStreamFromS3, writeStreamToS3, streamToSharp, setSharpConfig } from './src/resize';
 import * as request from 'request';
 
 const SRC_BUCKET = 'cdn.esmart.by';
@@ -22,11 +22,21 @@ export const resize = async (event) => {
   let [width, height, mode] = dstDir.split('x');
   width = parseInt(width) || null;
   height = parseInt(height) || null;
-  modeParser(mode, sharpConfig);
-
+  setSharpConfig(mode, sharpConfig);
+console.log('key',key);
+console.log('type',type);
+console.log('dstDir',dstDir);
+console.log('fileName',fileName);
+console.log('srcPath',srcPath);
+console.log('dstPath',dstPath);
+console.log('width',width);
+console.log('height',height);
+console.log('mode',mode);
+console.log('sharpConfig',sharpConfig);
   try {
 
     const exists = await isObjectExists({Bucket: SRC_BUCKET, Key: srcPath});
+console.log('exists',exists);
     const resizeStream = streamToSharp({ width, height, sharpConfig });
     const { writeStream, uploadFinished } = writeStreamToS3({ Bucket: DST_BUCKET, Key: dstPath });
     let readStream = null;
