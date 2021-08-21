@@ -5,12 +5,12 @@ import stream from 'stream';
 const s3 = new awS3({signatureVersion: 'v4'});
 
 const isObjectExists = ({ Bucket, Key }) => {
-    return await s3
+    return s3
       .headObject({ Bucket, Key })
       .promise()
       .then(
         () => true,
-        err => {
+        (err) => {
           if (err.statusCode === 404) {
             return false;
           }
@@ -46,8 +46,50 @@ const streamToSharp = ({ w, h, config }) => {
 }
 
 // sharp resize stream
-const isRGB = ({ value }) => {
-  return true;
+const parseColor = (c) => {
+  if (c.indexOf('-') > -1 || c.indexOf(',') > -1) {
+    c = c.replaceAll('-', ',');
+    switch (c.split(',').length) {
+    case 3:
+      return `rgb(${c})`;
+      break;
+    case 4:
+      return `rgba(${c})`;
+      break;
+    default:
+      return false;
+    }
+  }
+  
+  switch (c.length) {
+  case 3: case 6:
+    return '#' + c;
+  default:
+    return false;
+  }
+}
+
+const modeParser = (mode, config) => {
+  if (!mode) return;
+
+  switch (mode) {
+  case 't': // Transparent
+    config.fit = 'contain';
+    config.background = '#fff';
+    break;
+  case 'l': // ScaleAspectFill, scaled to fill. some portion of image may be clipped
+    config.fit = 'cover';
+    break;
+  case 'r': // DEFAULT: ScaleAspectFit, scale to minimum
+    config.fit = 'inside';
+    break;
+  default:
+    mode = parseColor(mode);
+    if (mode !== false) {
+      config.fit = 'contain';
+      config.background = mode;
+    }
+  }
 }
 
 export {
@@ -55,6 +97,5 @@ export {
   readStreamFromS3,
   writeStreamToS3,
   streamToSharp,
-  isRGB
+  modeParser
 };
-
