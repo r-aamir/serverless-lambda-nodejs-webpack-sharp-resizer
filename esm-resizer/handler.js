@@ -1,7 +1,8 @@
-import { readStreamFromS3, writeStreamToS3, streamToSharp, isRGB } from './src/resize';
+import { isObjectExists, readStreamFromS3, writeStreamToS3, streamToSharp, isRGB } from './src/resize';
+import * as request from 'request';
 
 const SRC_BUCKET = 'cdn.esmart.by';
-const DST_BUCKET = process.env.BUCKET;
+const DST_BUCKET = 'gi.esmart.by';
 const dstUrl = `http://${DST_BUCKET}.s3-website.${process.env.REGION}.amazonaws.com/`;
 
 export const resize = async (event) => {
@@ -11,12 +12,12 @@ export const resize = async (event) => {
   const key = event.queryStringParameters.key,
         [type, dstDir, fileName] = key.split("/"),
         types = ["p", "u", "att"],
-        sharpConfig = {}; // {fit: "inside", withoutEnlargement: true}
+        sharpConfig = {withoutEnlargement: true}; // {fit: "inside", }
 
   if (!type || !types.includes(type)) {
     throw new Error(`Allowed categories: ${types.join(",")}`);
   }
-  
+
   const srcPath = `${type}/${fileName}`;
   const dstPath = `${type}/${dstDir}/${fileName}`;
 
@@ -42,49 +43,31 @@ export const resize = async (event) => {
     }
   }
 
-//  console.log({key: key, type: type, src: src, file: file, width: width, height: height, mode: mode});
-
   try {
-    // source bucket read stream from S3
-    var readStream = readStreamFromS3({ Bucket: SRC_BUCKET, Key: srcPath });
 
-    // sharp resize stream
+    const exists = await isObjectExists({Bucket: SRC_BUCKET, Key: srcPath});
     const resizeStream = streamToSharp({ width, height, sharpConfig });
-
-    // destination bucket write streams to S3
     const { writeStream, uploadFinished } = writeStreamToS3({ Bucket: DST_BUCKET, Key: dstPath });
+    let readStream = null;
 
-    if (readStream === false) {
-      const request = require('request');
-      const { writeSrcStream, uploadSrcFinished } = writeStreamToS3({ Bucket: SRC_BUCKET, Key: srcPath });
-      request('http://tco.artrasoft.com/' + srcPath)
-        .pipe(writeSrcStream)
-        .pipe(resizeStream)
-        .pipe(writeStream);
-      const uploadedSrcData = await uploadSrcFinished;
+    if (exists) {
+        readStream = readStreamFromS3({ Bucket: SRC_BUCKET, Key: srcPath });
     } else {
-      readStream
-        .pipe(resizeStream)
-        .pipe(writeStream);
+        const { writeSrcStream, uploadSrcFinished } = writeStreamToS3({ Bucket: SRC_BUCKET, Key: srcPath });
+        readStream = request.get('http://tco.artrasoft.com/' + srcPath);
+        readStream.pipe(writeSrcStream);
+        const uploadedSrcData = await uploadSrcFinished;
     }
 
-    // wait for the stream to finish
+    readStream.pipe(resizeStream).pipe(writeStream);
     const uploadedData = await uploadFinished;
-
-    // log data to Dashbird
-    // console.log('Data: ', {...uploadedData, BucketEndpoint: URL, ImageURL: url});
-
-    // return a 301 redirect to the newly created resource in S3
+    
     return {
       statusCode: '301',
       headers: {location: dstUrl + dstPath},
       body: ''
     };
   } catch (err) {
-    console.error(err);
-    return {
-      statusCode: '500',
-      body: err.message
-    };
+    throw err;
   }
 };
