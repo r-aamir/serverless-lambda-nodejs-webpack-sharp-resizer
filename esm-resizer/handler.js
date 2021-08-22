@@ -1,4 +1,4 @@
-import { isObjectExists, streamFromS3, writeStreamToS3, streamToSharp, setSharpConfig } from './src/resize';
+import { isObjectExists, streamFromS3, streamToS3, streamToSharp, setSharpConfig } from './src/resize';
 import * as request from 'request';
 import { PassThrough } from 'stream'
 
@@ -50,11 +50,11 @@ console.log('exists',exists);
     } else {
         readStream = request.get('http://tco.artrasoft.com/' + srcPath);
         writeStream = streamToS3(pass, SRC_BUCKET, srcPath);
-
         readStream.pipe(writeStream);
         readStream = await writeStream;
-        pass = new PassThrough();
+        console.log(readStream);
 
+        pass = new PassThrough();
         writeStream = streamToS3(pass, DST_BUCKET, dstPath);
     }
 
