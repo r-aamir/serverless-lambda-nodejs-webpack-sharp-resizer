@@ -1,6 +1,5 @@
 import awS3 from 'aws-sdk/clients/s3';
 import sharp from 'sharp';
-import stream from 'stream';
 
 const s3 = new awS3({signatureVersion: 'v4'});
 
@@ -20,23 +19,33 @@ const isObjectExists = ({ Bucket, Key }) => {
 };
 
 // create the read stream abstraction for getting object data from S3
-const readStreamFromS3 = ({ Bucket, Key }) => {
+const streamFromS3 = ({ Bucket, Key }) => {
   return s3.getObject({ Bucket, Key }).createReadStream();
 };
 
 // create the write stream abstraction for uploading data to S3
-const writeStreamToS3 = ({ Bucket, Key }) => {
-  const pass = new stream.PassThrough();
-  return {
-    writeStream: pass,
-    uploadFinished: s3.upload({
+const streamToS3 = (pass, _bucket, _key) => {
+  return s3.upload({
       Body: pass,
-      Bucket,
+      Bucket: _bucket,
       ContentType: 'image/png',
-      Key
-    }).promise()
-  };
+      Key: _key
+    }).promise();
 };
+
+// create the write stream abstraction for uploading data to S3
+//const writeStreamToS3 = ({ Bucket, Key }) => {
+//  const pass = new PassThrough();
+//  return {
+//    writeStream: pass,
+//    uploadFinished: s3.upload({
+//      Body: pass,
+//      Bucket,
+//      ContentType: 'image/png',
+//      Key
+//    }).promise()
+//  };
+//};
 
 // sharp resize stream
 const streamToSharp = ({ w, h, config }) => {
@@ -50,19 +59,19 @@ const setSharpConfig = (mode, config) => {
 
   switch (mode) {
   case 't': // Transparent
-    config.fit = 'contain';
+    config.fit = sharp.fit.contain;
     config.background = '#fff';
     break;
   case 'l': // ScaleAspectFill, scaled to fill. some portion of image may be clipped
-    config.fit = 'cover';
+    config.fit = sharp.fit.cover;
     break;
   case 'r': // DEFAULT: ScaleAspectFit, scale to minimum
-    config.fit = 'inside';
+    config.fit = sharp.fit.inside;
     break;
   default:
     mode = parseColor(mode);
     if (mode !== false) {
-      config.fit = 'contain';
+      config.fit = sharp.fit.contain;
       config.background = mode;
     }
   }
@@ -89,8 +98,8 @@ const parseColor = (c) => {
 
 export {
   isObjectExists,
-  readStreamFromS3,
-  writeStreamToS3,
+  streamFromS3,
+  streamToS3,
   streamToSharp,
   setSharpConfig
 };

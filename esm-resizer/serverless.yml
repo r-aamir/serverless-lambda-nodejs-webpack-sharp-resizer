@@ -9,6 +9,7 @@ custom:
     includeModules:
       forceExclude:
         - aws-sdk
+        - request
 
 provider:
   name: aws

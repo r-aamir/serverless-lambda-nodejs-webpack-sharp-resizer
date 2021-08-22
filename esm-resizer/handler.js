@@ -1,8 +1,9 @@
-import { isObjectExists, readStreamFromS3, writeStreamToS3, streamToSharp, setSharpConfig } from './src/resize';
+import { isObjectExists, streamFromS3, writeStreamToS3, streamToSharp, setSharpConfig } from './src/resize';
 import * as request from 'request';
+import { PassThrough } from 'stream'
 
 const SRC_BUCKET = 'cdn.esmart.by';
-const DST_BUCKET = process.env.BUCKET;
+const DST_BUCKET = 'gi.esmart.by';
 const dstUrl = `http://${DST_BUCKET}.s3-website.${process.env.REGION}.amazonaws.com/`;
 
 export const resize = async (event) => {
@@ -35,23 +36,30 @@ console.log('mode',mode);
 console.log('sharpConfig',sharpConfig);
   try {
 
-    const exists = await isObjectExists({Bucket: SRC_BUCKET, Key: srcPath});
+    const exists = await isObjectExists( {Bucket: SRC_BUCKET, Key: srcPath} );
 console.log('exists',exists);
     const resizeStream = streamToSharp({ width, height, sharpConfig });
-    const { writeStream, uploadFinished } = writeStreamToS3({ Bucket: DST_BUCKET, Key: dstPath });
+
     let readStream = null;
+    let writeStream = null;
+    let pass = new PassThrough();
 
     if (exists) {
-        readStream = readStreamFromS3({ Bucket: SRC_BUCKET, Key: srcPath });
+        readStream = streamFromS3( {Bucket: SRC_BUCKET, Key: srcPath} );
+        writeStream = streamToS3(pass, DST_BUCKET, dstPath);
     } else {
-        const { writeSrcStream, uploadSrcFinished } = writeStreamToS3({ Bucket: SRC_BUCKET, Key: srcPath });
         readStream = request.get('http://tco.artrasoft.com/' + srcPath);
-        readStream.pipe(writeSrcStream);
-        const uploadedSrcData = await uploadSrcFinished;
+        writeStream = streamToS3(pass, SRC_BUCKET, srcPath);
+
+        readStream.pipe(writeStream);
+        readStream = await writeStream;
+        pass = new PassThrough();
+
+        writeStream = streamToS3(pass, DST_BUCKET, dstPath);
     }
 
     readStream.pipe(resizeStream).pipe(writeStream);
-    const uploadedData = await uploadFinished;
+    const uploadedData = await writeStream;
 
     return {
       statusCode: '301',
