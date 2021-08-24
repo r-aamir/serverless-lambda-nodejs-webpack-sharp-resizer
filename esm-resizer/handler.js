@@ -1,5 +1,4 @@
-import { isObjectExists, streamFromS3, streamToS3, streamToSharp, setSharpConfig } from './src/resize';
-import * as request from 'request';
+import { isObjectExists, streamFromS3, streamToS3, streamToSharp, setSharpConfig, request } from './src/resize';
 import { PassThrough } from 'stream'
 
 const SRC_BUCKET = 'cdn.esmart.by';
@@ -38,35 +37,33 @@ console.log('sharpConfig',sharpConfig);
 
     const exists = await isObjectExists( {Bucket: SRC_BUCKET, Key: srcPath} );
 console.log('exists',exists);
-    const resizeStream = streamToSharp({ width, height, sharpConfig });
 
-    let readStream = null;
-    let writeStream = null;
-    let pass = new PassThrough();
-
+    let buffer = null;
     if (exists) {
-        readStream = streamFromS3( {Bucket: SRC_BUCKET, Key: srcPath} );
-        writeStream = streamToS3(pass, DST_BUCKET, dstPath);
+      buffer = (await streamFromS3( {Bucket: SRC_BUCKET, Key: srcPath} )).Body;
     } else {
-        readStream = request.get('http://tco.artrasoft.com/' + srcPath);
-        writeStream = streamToS3(pass, SRC_BUCKET, srcPath);
-        readStream.pipe(writeStream);
-        readStream = await writeStream;
-        console.log(readStream);
-
-        pass = new PassThrough();
-        writeStream = streamToS3(pass, DST_BUCKET, dstPath);
+      buffer = (await request('http://tco.artrasoft.com/' + srcPath)).read();
+      await streamToS3(SRC_BUCKET, srcPath, buffer);
     }
 
-    readStream.pipe(resizeStream).pipe(writeStream);
-    const uploadedData = await writeStream;
+    buffer = await streamToSharp(width, height, sharpConfig, buffer);
+
+    await streamToS3(DST_BUCKET, dstPath, buffer);
 
     return {
-      statusCode: '301',
-      headers: {location: dstUrl + dstPath},
-      body: ''
+      statusCode: '200',
+      headers: {
+          'Content-Type': 'image/png',
+          'ContentLength': buffer.length
+      },
+      isBase64Encoded: 'true',
+      body: buffer.toString('base64')
     };
   } catch (err) {
-    throw err;
+    console.error(err);
+    return {
+      statusCode: '500',
+      body: err.message
+    };
   }
 };
