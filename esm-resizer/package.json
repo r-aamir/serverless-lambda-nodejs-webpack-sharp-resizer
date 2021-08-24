@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "sls offline start --port 8080 --dontPrintOutput --aws-profile serverless_admin",
-    "deploy": "sls deploy --aws-profile serverless_admin"
+    "deploy": "sls deploy --aws-profile serverless_admin",
+    "defunc": "sls deploy function -f resize --aws-profile serverless_admin"
   },
   "author": "",
   "license": "ISC",

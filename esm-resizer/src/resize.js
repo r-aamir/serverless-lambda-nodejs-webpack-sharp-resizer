@@ -4,54 +4,95 @@ import sharp from 'sharp';
 const s3 = new awS3({signatureVersion: 'v4'});
 
 const isObjectExists = ({ Bucket, Key }) => {
-    return s3
-      .headObject({ Bucket, Key })
-      .promise()
-      .then(
-        () => true,
-        (err) => {
-          if (err.statusCode === 404) {
-            return false;
-          }
-          throw err;
+  return s3.headObject({ Bucket, Key })
+    .promise()
+    .then(
+      () => true,
+      (err) => {
+        if (err.statusCode === 404) {
+          return false;
         }
-      );
+        throw err;
+      }
+    );
 };
+
+const request = async (url) => {
+
+  const Stream = require('stream').Transform;
+  const urlize = require('url').parse;
+  const http = require('http');
+  const options = urlize(url);
+
+  options.method = 'GET';
+  if (!options.port) options.port = 80;
+
+  return new Promise((resolve, reject) => {
+    const req = http.request(options, res => {
+      if (res.statusCode < 200 || res.statusCode > 299) {
+        reject(new Error('Status Code: ' + res.statusCode));
+      }
+      var data = new Stream();
+      res.on('data', chunk => {
+        data.push(chunk);
+      });
+//      res.on('end', () => resolve(Buffer.concat(data).toString()));
+      res.on('end', () => {
+        data.push(null);
+        resolve(data);
+      });
+    });
+    req.on('error', error => reject(error));
+    req.end();
+  });
+};
+
+//  var Stream = require('stream').Transform;
+//  let http = null;
+//  if (options.protocol === 'https:') {
+//    http = require('https');
+    // Added both certificate 'IGNORE' checks
+//    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+//    options.rejectUnhauthorized = false;
+//    if (!options.port) options.port = 443;
+//  } else {
+//    http = require('https');
+//    if (!options.port) options.port = 80;
+//  }
+//  http.request(options, function createHttpRequest(res) {
+//    var data = new stream.Transform();
+//    res.on('data', function (chunk) {
+//      data.push(chunk);
+//    });
+//    res.on('end', function (x) {
+//      // response.body = data.read();
+//    });
+//    req.on('error', function catchError(e) {
+//      cb(e, null);
+//    });
+//  }).end();
 
 // create the read stream abstraction for getting object data from S3
 const streamFromS3 = ({ Bucket, Key }) => {
-  return s3.getObject({ Bucket, Key }).createReadStream();
+  return s3.getObject({ Bucket, Key }).promise();
 };
 
 // create the write stream abstraction for uploading data to S3
-const streamToS3 = (pass, _bucket, _key) => {
+const streamToS3 = (bucket, key, body) => {
   return s3.upload({
-      Body: pass,
-      Bucket: _bucket,
+      Body: body,
+      Bucket: bucket,
       ContentType: 'image/png',
-      Key: _key
+      Key: key
     }).promise();
 };
 
-// create the write stream abstraction for uploading data to S3
-//const writeStreamToS3 = ({ Bucket, Key }) => {
-//  const pass = new PassThrough();
-//  return {
-//    writeStream: pass,
-//    uploadFinished: s3.upload({
-//      Body: pass,
-//      Bucket,
-//      ContentType: 'image/png',
-//      Key
-//    }).promise()
-//  };
-//};
-
 // sharp resize stream
-const streamToSharp = ({ w, h, config }) => {
-  return sharp()
+const streamToSharp = (w, h, config, buffer) => {
+  return sharp(buffer)
     .resize(w, h, config)
     .toFormat('png') // .jpeg()
+    .toBuffer();
 }
 
 const setSharpConfig = (mode, config) => {
@@ -101,5 +142,6 @@ export {
   streamFromS3,
   streamToS3,
   streamToSharp,
-  setSharpConfig
+  setSharpConfig,
+  request
 };

@@ -1,5 +1,5 @@
-import { isObjectExists, streamFromS3, streamToS3, streamToSharp, setSharpConfig, request } from './src/resize';
-import { PassThrough } from 'stream'
+import { isObjectExists, readStreamFromS3, writeStreamToS3, streamToSharp, setSharpConfig } from './src/resize';
+import * as request from 'request';
 
 const SRC_BUCKET = 'cdn.esmart.by';
 const DST_BUCKET = 'gi.esmart.by';
@@ -35,43 +35,27 @@ console.log('mode',mode);
 console.log('sharpConfig',sharpConfig);
   try {
 
-    const exists = await isObjectExists( {Bucket: SRC_BUCKET, Key: srcPath} );
+    const exists = await isObjectExists({Bucket: SRC_BUCKET, Key: srcPath});
 console.log('exists',exists);
+    const resizeStream = streamToSharp({ width, height, sharpConfig });
+    const { writeStream, uploadFinished } = writeStreamToS3({ Bucket: DST_BUCKET, Key: dstPath });
+    let readStream = null;
 
-    let buffer = null;
     if (exists) {
-      buffer = (await streamFromS3( {Bucket: SRC_BUCKET, Key: srcPath} )).Body;
+        readStream = readStreamFromS3({ Bucket: SRC_BUCKET, Key: srcPath });
     } else {
-      buffer = (await request('http://tco.artrasoft.com/' + srcPath)).read();
-      await streamToS3(SRC_BUCKET, srcPath, buffer);
+        readStream = request.get('http://tco.artrasoft.com/' + srcPath);
     }
 
-//    const pass = new PassThrough();
-//    const stream = streamToS3(DST_BUCKET, dstPath, pass);
-//    streamToSharp(width, height, sharpConfig, buffer).pipe(pass);
-//    const data = await stream;
-
-    await streamToS3(DST_BUCKET, dstPath, await streamToSharp(width, height, sharpConfig, buffer));
+    readStream.pipe(resizeStream).pipe(writeStream);
+    const uploadedData = await uploadFinished;
 
     return {
       statusCode: '301',
       headers: {location: dstUrl + dstPath},
       body: ''
     };
-//    return {
-//      statusCode: '200',
-//      headers: {
-//          'Content-Type': 'image/png',
-//          'ContentLength': buffer.length
-//      },
-//      isBase64Encoded: 'true',
-//      body: buffer.toString('base64')
-//    };
   } catch (err) {
-    console.error(err);
-    return {
-      statusCode: '500',
-      body: err.message
-    };
+    throw err;
   }
 };
