@@ -12,7 +12,7 @@ const isObjectExists = ({ Bucket, Key }) => {
         if (err.statusCode === 404) {
           return false;
         }
-        throw err;
+	throw err;
       }
     );
 };
@@ -47,34 +47,14 @@ const request = async (url) => {
   });
 };
 
-//  var Stream = require('stream').Transform;
-//  let http = null;
-//  if (options.protocol === 'https:') {
-//    http = require('https');
-    // Added both certificate 'IGNORE' checks
-//    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-//    options.rejectUnhauthorized = false;
-//    if (!options.port) options.port = 443;
-//  } else {
-//    http = require('https');
-//    if (!options.port) options.port = 80;
-//  }
-//  http.request(options, function createHttpRequest(res) {
-//    var data = new stream.Transform();
-//    res.on('data', function (chunk) {
-//      data.push(chunk);
-//    });
-//    res.on('end', function (x) {
-//      // response.body = data.read();
-//    });
-//    req.on('error', function catchError(e) {
-//      cb(e, null);
-//    });
-//  }).end();
-
-// create the read stream abstraction for getting object data from S3
-const streamFromS3 = ({ Bucket, Key }) => {
+// read data abstraction for getting s3 object as buffer
+const bufferFromS3 = ({ Bucket, Key }) => {
   return s3.getObject({ Bucket, Key }).promise();
+};
+
+// read stream abstraction for s3 object data from S3
+const streamFromS3 = ({ Bucket, Key }) => {
+  return s3.getObject({ Bucket, Key }).createReadStream();
 };
 
 // create the write stream abstraction for uploading data to S3
@@ -87,13 +67,13 @@ const streamToS3 = (bucket, key, body) => {
     }).promise();
 };
 
-// sharp resize stream
+// sharp resized buffer
 const streamToSharp = (w, h, config, buffer) => {
   return sharp(buffer)
     .resize(w, h, config)
     .toFormat('png') // .jpeg()
-    .toBuffer();
-}
+    .toBuffer(); // remove this to return stream
+};
 
 const setSharpConfig = (mode, config) => {
   if (!mode) return;
@@ -116,7 +96,7 @@ const setSharpConfig = (mode, config) => {
       config.background = mode;
     }
   }
-}
+};
 
 const parseColor = (c) => {
   if (c.indexOf(',') > -1 || c.indexOf('-') > -1) {
@@ -135,7 +115,7 @@ const parseColor = (c) => {
   default:
     return false;
   }
-}
+};
 
 export {
   isObjectExists,

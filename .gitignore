@@ -1,4 +1,6 @@
 # package directories
+esm-resizer/nbproject/
+esm-resizer/backup/
 node_modules
 jspm_packages
 
@@ -11,3 +13,17 @@ secrets.env
 
 # VS Code
 .vscode
+
+
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+.webpack
+dist
+.idea
+.DS_Store
+env.local
+.env

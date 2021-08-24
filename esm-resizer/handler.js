@@ -23,20 +23,9 @@ export const resize = async (event) => {
   width = parseInt(width) || null;
   height = parseInt(height) || null;
   setSharpConfig(mode, sharpConfig);
-console.log('key',key);
-console.log('type',type);
-console.log('dstDir',dstDir);
-console.log('fileName',fileName);
-console.log('srcPath',srcPath);
-console.log('dstPath',dstPath);
-console.log('width',width);
-console.log('height',height);
-console.log('mode',mode);
-console.log('sharpConfig',sharpConfig);
-  try {
 
+  try {
     const exists = await isObjectExists( {Bucket: SRC_BUCKET, Key: srcPath} );
-console.log('exists',exists);
 
     let buffer = null;
     if (exists) {
@@ -51,7 +40,8 @@ console.log('exists',exists);
 //    streamToSharp(width, height, sharpConfig, buffer).pipe(pass);
 //    const data = await stream;
 
-    await streamToS3(DST_BUCKET, dstPath, await streamToSharp(width, height, sharpConfig, buffer));
+    const image = await streamToSharp(width, height, sharpConfig, buffer);
+    await streamToS3(DST_BUCKET, dstPath, image);
 
     return {
       statusCode: '301',
@@ -62,10 +52,10 @@ console.log('exists',exists);
 //      statusCode: '200',
 //      headers: {
 //          'Content-Type': 'image/png',
-//          'ContentLength': buffer.length
+//          'ContentLength': image.length
 //      },
 //      isBase64Encoded: 'true',
-//      body: buffer.toString('base64')
+//      body: image.toString('base64')
 //    };
   } catch (err) {
     console.error(err);
