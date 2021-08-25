@@ -36,7 +36,6 @@ const request = async (url) => {
       res.on('data', chunk => {
         data.push(chunk);
       });
-//      res.on('end', () => resolve(Buffer.concat(data).toString()));
       res.on('end', () => {
         data.push(null);
         resolve(data);
@@ -47,18 +46,11 @@ const request = async (url) => {
   });
 };
 
-// read data abstraction for getting s3 object as buffer
-const bufferFromS3 = ({ Bucket, Key }) => {
+const fromS3 = ({ Bucket, Key }) => {
   return s3.getObject({ Bucket, Key }).promise();
 };
 
-// read stream abstraction for s3 object data from S3
-const streamFromS3 = ({ Bucket, Key }) => {
-  return s3.getObject({ Bucket, Key }).createReadStream();
-};
-
-// create the write stream abstraction for uploading data to S3
-const streamToS3 = (bucket, key, body) => {
+const toS3 = (bucket, key, body) => {
   return s3.upload({
       Body: body,
       Bucket: bucket,
@@ -67,12 +59,11 @@ const streamToS3 = (bucket, key, body) => {
     }).promise();
 };
 
-// sharp resized buffer
-const streamToSharp = (w, h, config, buffer) => {
+const toSharp = (w, h, config, buffer) => {
   return sharp(buffer)
     .resize(w, h, config)
-    .toFormat('png') // .jpeg()
-    .toBuffer(); // remove this to return stream
+    .toFormat('png')
+    .toBuffer();
 };
 
 const setSharpConfig = (mode, config) => {
@@ -119,9 +110,9 @@ const parseColor = (c) => {
 
 export {
   isObjectExists,
-  streamFromS3,
-  streamToS3,
-  streamToSharp,
+  fromS3,
+  toS3,
+  toSharp,
   setSharpConfig,
   request
 };
